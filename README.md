@@ -113,13 +113,107 @@ Isso criará o arquivo `./calculadora/db/calculadora-pro.db` necessário para o 
 
 ---
 
-## 📦 Arquivos do Projeto
+## 🤖 Sistema Agentico Unificado (NOVO)
+
+O diretório `agentic-system/` contém um sistema completo de agentes inteligentes que orquestra **TODOS** os sistemas da FAT Tech:
+
+| Agente | Domínio | Capacidades |
+|--------|---------|-------------|
+| `rtc_agent` | RTC | DANFSe, Simples Nacional, Regime Regular |
+| `meta_ads_agent` | Meta Ads | Dashboards BI, coleta de dados, contas |
+| `clip_watcher_agent` | Twitch | Gravação live, detecção picos, cortes, verticais |
+| `anima_agent` | Ânima | Typeform diagnóstico, processamento, relatórios |
+| `analyzer_agent` | Análise | Tendências, correlações, resumos |
+| `orchestrator` | Orquestração | Roteamento, workflows, chat unificado |
+
+### Inicialização do Sistema Agentico
+
+```bash
+cd /e/rtc-unificado/agentic-system
+chmod +x run.sh
+./run.sh
+```
+
+### Modos de Operação
+
+1. **CLI Interativo** - Chat com linguagem natural
+2. **API HTTP** (porta 8088) - Integração programática
+3. **Status** - Verifica todos os agentes
+
+### Exemplos de Uso (CLI)
+
+```
+🤖 FAT Agentic > status dos servicos rtc
+🤖 FAT Agentic > calcular simples nacional para item NCM 24021000 base 1000
+🤖 FAT Agentic > gerar danfse do arquivo notas.xml
+🤖 FAT Agentic > mostrar dashboards meta ads de hoje
+🤖 FAT Agentic > iniciar gravacao da live do alanzoka
+🤖 FAT Agentic > listar clipes gerados
+🤖 FAT Agentic > carregar diagnostico anima supermercado
+🤖 FAT Agentic > analisar tendência: [10, 15, 12, 18, 22, 25]
+```
+
+### API HTTP
+
+```bash
+# Iniciar API
+python3 main.py api
+
+# Health check
+curl http://localhost:8088/health
+
+# Chat
+curl -X POST http://localhost:8088/ \
+  -H "Content-Type: application/json" \
+  -d '{"action": "chat", "params": {"message": "status rtc", "params": {}}}'
+
+# Workflow complexo
+curl -X POST http://localhost:8088/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "executar_workflow",
+    "params": {
+      "workflow": [
+        {"agent": "rtc_agent", "action": "health_check", "params": {"service": "all"}},
+        {"agent": "meta_ads_agent", "action": "listar_dashboards", "params": {}},
+        {"agent": "clip_watcher_agent", "action": "listar_clipes", "params": {}}
+      ]
+    }
+  }'
+```
+
+### Arquitetura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ORCHESTRATOR                             │
+│  (Roteamento inteligente, Workflows, Chat unificado)       │
+└──────────┬──────────────┬──────────────┬────────────────────┘
+           │              │              │
+    ┌──────▼──────┐ ┌─────▼─────┐ ┌─────▼─────┐ ┌──────▼──────┐
+    │  RTC Agent  │ │Meta Ads   │ │Clip       │ │ Ânima Agent │
+    │             │ │Agent      │ │Watcher    │ │             │
+    │ • DANFSe    │ │• BI       │ │Agent      │ │• Typeform   │
+    │ • Simples   │ │• Contas   │ │• Gravação │ │• Scores     │
+    │ • Regime    │ │• Coleta   │ │• Cortes   │ │• Relatórios │
+    └─────────────┘ └───────────┘ └───────────┘ └─────────────┘
+                              │
+                    ┌─────────▼─────────┐
+                    │   MEMORY BUS      │
+                    │  (JSON persistido)│
+                    └───────────────────┘
+```
+
+---
+
+## 📦 Arquivos do Projeto (ATUALIZADO)
 
 | Arquivo | Descrição |
 |---------|-----------|
 | `index.html` | Dashboard único com todos os 3 módulos |
 | `start-all.sh` | Script para iniciar todos os serviços |
 | `verificar-ambiente.sh` | Verifica Java, Go, Docker |
+| `agentic-system/` | **Sistema agentico completo** |
 | `calculadora-rtc-gerador-danfse/` | Repositório original (Go) |
 | `calculadora-rtc-simples-nacional/` | Repositório original (Java) |
 | `calculadora-rtc-regime-regular/` | Repositório original (Java) |

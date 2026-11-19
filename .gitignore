@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Submodules (repositórios Git internos - não versionar)
+calculadora-rtc-gerador-danfse/
+calculadora-rtc-simples-nacional/
+calculadora-rtc-regime-regular/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
