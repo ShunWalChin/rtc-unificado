@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAT Tech - RTC Unificado - Calculadora de Tributos</title>
+<style>
+  :root {
+    --primary: #003d5c;
+    --secondary: #00a3e0;
+    --accent: #ff6b00;
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --transition: 0.2s ease;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  a { color: var(--secondary); text-decoration: none; }
+  a:hover { color: var(--primary); text-decoration: underline; }
+
+  /* Navbar */
+  .navbar { position: sticky; top: 0; z-index: 1000; background: var(--paper); background: #fff; border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+  .navbar-inner { max-width: 1400px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; height: 64px; }
+  .logo { font-family: 'Segoe UI', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; letter-spacing: -0.5px; }
+  .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { color: var(--muted); font-weight: 600; font-size: 0.95rem; transition: color var(--transition); }
+  .nav-links a:hover { color: var(--secondary); }
+  .nav-links a.active { color: var(--primary); }
+  .nav-actions { display: flex; gap: 1rem; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.4rem; border-radius: var(--radius); border: none; font-family: inherit; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all var(--transition); text-decoration: none; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #002e46; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 61, 92, 0.3); }
+  .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+  .btn-secondary:hover { background: var(--primary); color: #fff; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #0e9f74; color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #dc2626; color: #fff; }
+  .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+  .btn-icon { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; }
+
+  /* Hero / Header da página */
+  .page-header { background: linear-gradient(135deg, var(--primary) 0%, #005a8a 100%); color: #fff; padding: 3rem 2rem 2rem; margin-bottom: 2rem; border-radius: 0 0 var(--radius) var(--radius); box-shadow: 0 4px 20px rgba(0, 61, 92, 0.25); }
+  .page-header h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem; }
+  .page-header p { font-size: 1.1rem; opacity: 0.95; max-width: 700px; }
+
+  /* Layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 2rem 3rem; }
+  .section { margin-bottom: 3rem; }
+  .section-title { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+  .section-title .badge { font-size: 0.85rem; font-weight: 600; color: var(--secondary); }
+
+  /* Cards / Grid */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); transition: all var(--transition); }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.1); border-color: var(--secondary); }
+  .card h3 { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+  .card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+  .card .btn { width: 100%; justify-content: center; }
+
+  /* Formulários */
+  .form-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); margin-bottom: 2rem; }
+  .form-title { font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid var(--bg); padding-bottom: 0.75rem; }
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+  .form-group label { font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .form-group input, .form-group select, .form-group textarea { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 0.95rem; background: #fff; transition: border-color var(--transition), box-shadow var(--transition); color: var(--text); }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(0, 163, 224, 0.15); }
+  .form-group input.invalid, .form-group select.invalid, .form-group textarea.invalid { border-color: var(--danger); }
+  .form-group .error { color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem; }
+  .form-group.full-width { grid-column: 1 / -1; }
+
+  /* Resultado */
+  .result-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem; display: none; }
+  .result-card.show { display: block; animation: slideIn 0.3s ease; }
+  .result-card h3 { color: var(--success); font-size: 1.25rem; margin-bottom: 1rem; }
+  .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+  .metric { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+  .metric .value { font-size: 1.75rem; font-weight: 800; color: var(--primary); }
+  .metric .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .result-json { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.85rem; overflow: auto; max-height: 400px; color: var(--muted); }
+
+  /* Tabelas */
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+  th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); color: var(--muted); }
+  th { font-weight: 700; color: var(--primary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  tr:hover { background: #f8fafc; }
+
+  /* Alertas */
+  .alert { padding: 1rem; border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.95rem; }
+  .alert-info { background: #dbeafe; color: #1e40af; border-left: 4px solid var(--secondary); }
+  .alert-warning { background: #fef3c7; color: #92400e; border-left: 4px solid var(--warning); }
+  .alert-danger { background: #fee2e2; color: #991b1b; border-left: 4px solid var(--danger); }
+
+  /* Abas */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+  .tabs button { background: none; border: none; border-bottom: 2px solid transparent; padding: 0.75rem 1.5rem; font-family: inherit; font-weight: 600; color: var(--muted); cursor: pointer; transition: all var(--transition); font-size: 0.95rem; }
+  .tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tabs button:hover { color: var(--primary); }
+
+  /* Footer */
+  footer { margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.875rem; text-align: center; }
+
+  /* Utilitários */
+  .flex { display: flex; align-items: center; gap: 0.5rem; }
+  .text-center { text-align: center; }
+  .text-muted { color: var(--muted); }
+  .text-success { color: var(--success); font-weight: 700; }
+  .hidden { display: none !important; }
+  .spinner { width: 20px; height: 20px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .navbar-inner { flex-direction: column; gap: 1rem; padding: 1rem; height: auto; }
+    .nav-links { gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    .nav-actions { gap: 0.5rem; }
+    .container { padding: 0 1rem 2rem; }
+    .page-header { padding: 2.5rem 1rem 1.5rem; }
+    .page-header h1 { font-size: 1.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <div class="logo"><div class="logo-dot"></div><strong>FAT Tech</strong> <span style="font-weight:400; color:#6b7280;">· RTC Unificado</span></div>
+    <ul class="nav-links">
+      <li><a href="#inicio" class="nav-link active">Início</a></li>
+      <li><a href="#gerador-danfse" class="nav-link">Gerador DANFSe</a></li>
+      <li><a href="#simples-nacional" class="nav-link">Simples Nacional</a></li>
+      <li><a href="#regime-regular" class="nav-link">Regime Regular</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-secondary btn-sm" id="btn-status">Status dos Serviços</a>
+      <a href="#" class="btn btn-primary btn-sm" id="btn-limpar">Limpar Tudo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="page-header">
+  <h1>RTC Unificado</h1>
+  <p>Dashboard integrado para as calculadoras de tributos da Receita Federal: <strong>DANFSe</strong>, <strong>Simples Nacional</strong> e <strong>Regime Regular</strong>. Calcule, visualize e gerencie documentos fiscais em um único lugar.</p>
+</header>
+
+<div class="container">
+
+  <!-- Status dos Serviços -->
+  <section class="section">
+    <div class="section-title"><span class="badge">●</span> Status dos Serviços</div>
+    <div class="cards-grid" id="status-cards">
+      <div class="card">
+        <h3>📄 Gerador DANFSe</h3>
+        <p>Geração de PDF a partir de XML de NFS-e</p>
+        <div class="flex" style="margin-top:1rem;">
+          <span class="spinner" id="spinner-danfse"></span>
+          <span id="status-danfse" class="text-muted">Verificando...</span>
+        </div>
+        <div class="metric" id="metric-danfse" style="margin-top:1rem; display:none;">
+          <div class="value" id="val-danfse">--</div>
+          <div class="label">Status</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📊 Simples Nacional</h3>
+        <p>Cálculo de CBS e IBS - Regime Simples Nacional</p>
+        <div class="flex" style="margin-top:1rem;">
+          <span class="spinner" id="spinner-simples"></span>
+          <span id="status-simples" class="text-muted">Verificando...</span>
+        </div>
+        <div class="metric" id="metric-simples" style="margin-top:1rem; display:none;">
+          <div class="value" id="val-simples">--</div>
+          <div class="label">Status</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>⚖️ Regime Regular</h3>
+        <p>Cálculo de CBS, IBS e Imposto Seletivo - Regime Geral</p>
+        <div class="flex" style="margin-top:1rem;">
+          <span class="spinner" id="spinner-regular"></span>
+          <span id="status-regular" class="text-muted">Verificando...</span>
+        </div>
+        <div class="metric" id="metric-regular" style="margin-top:1rem; display:none;">
+          <div class="value" id="val-regular">--</div>
+          <div class="label">Status</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Início / Visão Geral -->
+  <section id="inicio" class="section">
+    <div class="section-title">Visão Geral</div>
+    <div class="cards-grid">
+      <div class="card">
+        <h3>📄 DANFSe</h3>
+        <p>Gerador de Documento Auxiliar da Nota Fiscal de Serviços Eletrônica a partir do XML de NFS-e.</p>
+        <a href="#gerador-danfse" class="btn btn-primary">Acessar Gerador</a>
+      </div>
+      <div class="card">
+        <h3>📊 Simples Nacional</h3>
+        <p>Calcule CBS e IBS para operações do regime do Simples Nacional com observabilidade por item.</p>
+        <a href="#simples-nacional" class="btn btn-primary">Acessar Calculadora</a>
+      </div>
+      <div class="card">
+        <h3>⚖️ Regime Regular</h3>
+        <p>Calcule CBS, IBS e Imposto Seletivo para o regime regular, com base de cálculo unificada e validação de XML.</p>
+        <a href="#regime-regular" class="btn btn-primary">Acessar Calculadora</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gerador DANFSe -->
+  <section id="gerador-danfse" class="section hidden">
+    <div class="section-title">📄 Gerador DANFSe</div>
+    <div class="form-card">
+      <div class="form-title">Gerar DANFSe a partir de XML de NFS-e</div>
+      <form id="form-danfse" onsubmit="event.preventDefault(); gerarDanfse(event);">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Arquivo XML da NFS-e</label>
+            <input type="file" id="xml-danfse" accept=".xml" required>
+          </div>
+          <div class="form-group">
+            <label>Situação da Nota (STC)</label>
+            <select id="stc-danfse">
+              <option value="0">0 - Válida</option>
+              <option value="1">1 - Substituída</option>
+              <option value="2">2 - Cancelada</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Incluir Canhoto?</label>
+            <select id="canhoto-danfse">
+              <option value="true">Sim</option>
+              <option value="false">Não</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-danfse">Gerar DANFSe (PDF)</button>
+      </div>
+      <div id="resultado-danfse" class="result-card">
+        <h3>📄 DANFSe Gerado</h3>
+        <div class="flex" style="gap:1rem; flex-wrap:wrap;">
+          <a id="link-danfse" class="btn btn-success btn-sm" download>Baixar PDF</a>
+          <button class="btn btn-secondary btn-sm" onclick="visualizarPdf()">Visualizar</button>
+        </div>
+        <div id="info-danfse" style="margin-top:1rem; font-size:0.9rem; color:var(--muted);"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Simples Nacional -->
+  <section id="simples-nacional" class="section hidden">
+    <div class="section-title">📊 Simples Nacional</div>
+    <div class="form-card">
+      <div class="form-title">Calcular CBS e IBS - Simples Nacional</div>
+      <div class="tabs">
+        <button onclick="trocarAbaSimples('observacao')" id="tab-simples-obs" class="active">Observabilidade</button>
+        <button onclick="trocarAbaSimples('atividades')" id="tab-simples-ativ">Atividades</button>
+      </div>
+
+      <div id="tab-observacao" class="form-section">
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>JSON de Entrada (JSON Array de itens)</label>
+            <textarea id="json-simples" class="full-width" rows="8" placeholder='Ex: [{"numero":"1","ncm":"24021000","cst":"000","cClassTrib":"000001","baseCalculo":"200.00","quantidade":"1","unidade":"UN"}]'></textarea>
+            <div class="error" id="erro-json-simples"></div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="calcularSimplesObservavel()">Calcular Simples Nacional</button>
+        <div id="resultado-simples" class="result-card show" style="margin-top:1rem;">
+          <h3>Resultado - Simples Nacional</h3>
+          <div class="result-grid" id="grid-simples"></div>
+          <div class="result-json" id="json-saida-simples"></div>
+        </div>
+      </div>
+
+      <div id="tab-atividades" class="form-section hidden">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data (YYYY-MM-DD)</label>
+            <input type="date" id="data-atividades" value="">
+          </div>
+          <div class="form-group" style="align-self:end;">
+            <button type="button" class="btn btn-primary" onclick="listarAtividadesSimples()">Buscar Atividades</button>
+          </div>
+        </div>
+        <div id="resultado-atividades-simples" class="result-card" style="margin-top:1rem;display:none;">
+          <h3>Atividades do Simples Nacional</h3>
+          <div id="tabela-atividades-simples"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Regime Regular -->
+  <section id="regime-regular" class="section hidden">
+    <div class="section-title">⚖️ Regime Regular</div>
+    <div class="form-card">
+      <div class="form-title">Calcular CBS, IBS e Imposto Seletivo</div>
+      <div class="tabs">
+        <button onclick="trocarAbaRegular('calculo')" id="tab-reg-calc" class="active">Cálculo de Tributos</button>
+        <button onclick="trocarAbaRegular('base-calculo')" id="tab-reg-bc" class="active">Base de Cálculo</button>
+        <button onclick="trocarAbaRegular('xml')" id="tab-reg-xml" class="active">XML / Validação</button>
+      </div>
+
+      <div id="tab-calculo" class="form-section">
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>JSON de Entrada</label>
+            <textarea id="json-regime" class="full-width" rows="8" placeholder='Ex: [{"numero":"1","ncm":"24021000","cst":"000","cClassTrib":"000001","baseCalculo":"200.00","quantidade":"1","unidade":"UN"}]'></textarea>
+            <div class="error" id="erro-json-regime"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de Operação</label>
+            <select id="tp-doc-regime">
+              <option value="55">55 - NF-e</option>
+              <option value="65">65 - NFC-e</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Município (IBGE)</label>
+            <input type="text" id="municipio-regime" value="4314902" placeholder="Ex: 4314902">
+          </div>
+          <div class="form-group">
+            <label>UF</label>
+            <input type="text" id="uf-regime" value="RS" maxlength="2">
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="calcularRegimeRegular()">Calcular Regime Regular</button>
+        <div id="resultado-regime" class="result-card" style="margin-top:1rem;display:none;">
+          <h3>Resultado - Regime Regular</h3>
+          <div class="result-grid" id="grid-regime"></div>
+          <div class="result-json" id="json-saida-regime"></div>
+        </div>
+      </div>
+
+      <div id="tab-base-calculo" class="form-section hidden">
+        <div class="form-group full-width">
+          <label>JSON Base de Cálculo Unificada</label>
+          <textarea id="json-bc-regime" class="full-width" rows="6" placeholder='Informe o JSON da base de cálculo'></textarea>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="calcularBaseCalculo()">Calcular Base de Cálculo</button>
+        <div id="resultado-bc-regime" class="result-card" style="margin-top:1rem;display:none;">
+          <h3>Resultado - Base de Cálculo</h3>
+          <div class="result-json" id="json-saida-bc"></div>
+        </div>
+      </div>
+
+      <div id="tab-xml" class="form-section hidden">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="tipo-xml">
+              <option value="nfe">NF-e</option>
+              <option value="nfse">NFS-e</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Subtipo</label>
+            <input type="text" id="subtipo-xml" value="grupo" placeholder="grupo">
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>XML</label>
+          <textarea id="xml-regime" class="full-width" rows="8" placeholder='Cole o XML aqui'></textarea>
+        </div>
+        <div class="form-row">
+          <button type="button" class="btn btn-primary" onclick="gerarXml()">Gerar XML</button>
+          <button type="button" class="btn btn-secondary" onclick="validarXml()">Validar XML</button>
+        </div>
+        <div id="resultado-xml-regime" class="result-card" style="margin-top:1rem;display:none;">
+          <h3>Resultado - XML</h3>
+          <div class="result-json" id="json-saida-xml"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p><strong>FAT Tech - RTC Unificado</strong> · Calculadoras de Tributos da Receita Federal</p>
+  <p>Este é um cliente web que consome as APIs locais dos três projetos da Receita Federal. Certifique-se de que os serviços estejam rodando antes de usar.</p>
+</footer>
+
+<script>
+// Configuração das URLs dos serviços
+const APIS = {
+  danfse: 'http://localhost:8080',
+  simples: 'http://localhost:8082',
+  regime: 'http://localhost:8080'
+};
+
+// Navegação entre seções
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const href = this.getAttribute('href');
+    document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+    document.querySelector(href).classList.remove('hidden');
+    window.scrollTo(0, 0);
+  });
+});
+
+// Status dos serviços
+async function verificarServicos() {
+  const servicos = [
+    { nome: 'danfse', url: APIS.danfse, el: 'danfse' },
+    { nome: 'simples', url: APIS.simples, el: 'simples' },
+    { nome: 'regime', url: APIS.regime, el: 'regular' }
+  ];
+
+  for (const s of servicos) {
+    try {
+      const resp = await fetch(`${s.url}/health/live`, { timeout: 3000 });
+      const el = document.getElementById(`status-${s.el}`);
+      const spinner = document.getElementById(`spinner-${s.el}`);
+      const metrica = document.getElementById(`metrica-${s.el}`);
+      const valor = document.getElementById(`val-${s.el}`);
+      if (resp.ok) {
+        el.textContent = 'Online';
+        el.className = 'text-success';
+        spinner.style.display = 'none';
+        metrica.style.display = 'block';
+        valor.textContent = 'Online';
+      } else {
+        el.textContent = 'Erro';
+        el.className = 'text-danger';
+        spinner.style.display = 'none';
+      }
+    } catch (err) {
+      const el = document.getElementById(`status-${s.el}`);
+      const spinner = document.getElementById(`spinner-${s.el}`);
+      el.textContent = 'Offline';
+      el.className = 'text-danger';
+      spinner.style.display = 'none';
+    }
+  }
+}
+
+// ===== DANFSE ============
+async function gerarDanfse(event) {
+  event.preventDefault();
+  const file = document.getElementById('xml-danfse').files[0];
+  const stc = document.getElementById('stc-danfse').value;
+  const canhoto = document.getElementById('cano-danfse').value;
+
+  if (!file) {
+    alert('Selecione um arquivo XML');
+    return;
+  }
+
+  const btn = document.getElementById('btn-danfse');
+  btn.disabled = true;
+  btn.textContent = 'Processando...';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const url = `${APIS.danfse}/api/danfse?stc=${stc}&cano=${cano}`;
+
+  try {
+    const resp = await fetch(url, { method: 'POST', body: formData });
+    if (!resp.ok) throw new Error(`Erro ${resp.status}: ${await resp.text()}`);
+    const blob = await resp.blob();
+    const urlObj = URL.createObjectURL(blob);
+    document.getElementById('link-danfse').href = urlObj;
+    document.getElementById('link-danfse').download = 'danfse.pdf';
+    document.getElementById('resultado-danfse').classList.add('show');
+    document.getElementById('info-danfse').textContent = `Arquivo gerado com sucesso (${Math.round(blob.size / 1024)} KB)`;
+  } catch (err) {
+    alert(`Erro ao gerar DANFSe: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Gerar DANFSe (PDF)';
+  }
+}
+
+function visualizarPdf() {
+  const link = document.getElementById('link-danfse').href;
+  window.open(link, '_blank');
+}
+
+// ===== SIMPLES NACIONAL ============
+function trocarAbaSimples(aba) {
+  document.querySelectorAll('#simples-nacional .tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#simples-nacional .form-section').forEach(s => s.classList.add('hidden'));
+  document.getElementById(`tab-simples-${aba}`).classList.add('active');
+  document.getElementById(`tab-${aba}`).classList.remove('hidden');
+}
+
+async function calcularSimplesObservavel() {
+  const json = document.getElementById('json-simples').value.trim();
+  if (!json) {
+    alert('Informe o JSON de entrada');
+    return;
+  }
+  try {
+    JSON.parse(json);
+  } catch (e) {
+    document.getElementById('erro-json-simples').textContent = 'JSON inválido: ' + e.message;
+    return;
+  }
+  document.getElementById('erro-json-simples').textContent = '';
+
+  const btn = document.querySelector('#simples-nacional .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Processando...';
+
+  try {
+    const resp = await fetch(`${APIS.simples}/calculadora/observabilidade/simples-nacional`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: json
+    });
+    if (!resp.ok) throw new Error(`Erro ${resp.status}: ${await resp.text()}`);
+    const data = await resp.json();
+    document.getElementById('resultado-simples').classList.add('show');
+    document.getElementById('json-saida-simples').textContent = JSON.stringify(data, null, 2);
+    montarGridSimples(data);
+  } catch (err) {
+    alert(`Erro ao calcular Simples Nacional: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Calcular Simples Nacional';
+  }
+}
+
+function montarGridSimples(data) {
+  const grid = document.getElementById('grid-simples');
+  grid.innerHTML = '';
+  // Tentativa genérica de exibir métricas numéricas
+  const vals = extrairNumericos(data);
+  if (vals.length === 0) {
+    grid.innerHTML = '<div style="color:var(--muted);">Nenhum valor numérico encontrado na resposta.</div>';
+    return;
+  }
+  vals.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'metric';
+    div.innerHTML = `<div class="value">${v.valor}</div><div class="label">${v.label}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+function extrairNumericos(obj, prefix = '') {
+  const resultados = [];
+  for (const [k, v] of Object.entries(obj)) {
+    const chave = prefix ? `${prefix}.${k}` : k;
+    if (v === null || v === undefined) continue;
+    if (typeof v === 'number') {
+      resultados.push({ valor: v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), label: chave });
+    } else if (typeof v === 'object') {
+      resultados.push(...extrairNumericos(v, chave));
+    }
+  }
+  return resultados;
+}
+
+async function listarAtividadesSimples() {
+  const data = document.getElementById('data-atividades').value;
+  if (!data) {
+    alert('Informe uma data');
+    return;
+  }
+  try {
+    const resp = await fetch(`${APIS.simples}/calculadora/simples-nacional/atividades?data=${data}`);
+    if (!resp.ok) throw new Error(`Erro ${resp.status}`);
+    const dataJson = await resp.json();
+    const container = document.getElementById('tabela-atividades-simples');
+    const resultado = document.getElementById('resultado-atividades-simples');
+    resultado.classList.remove('hidden');
+    if (!dataJson || dataJson.length === 0) {
+      container.innerHTML = '<p style="color:var(--muted);">Nenhuma atividade encontrada para esta data.</p>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Código</th><th>Descricao</th><th>Anexo</th><th>Tipo Documento</th><th>Class Tribut.</th></tr></thead><tbody>';
+    dataJson.forEach(a => {
+      html += `<tr><td>${a.codigo || '-'}</td><td>${a.descricao || '-'}</td><td>${a.anexo || '-'}</td><td>${a.tipoDocumento || '-'}</td><td>${a.classTribut || '-'}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch (err) {
+    alert(`Erro ao buscar atividades: ${err.message}`);
+  }
+}
+
+// ===== REGIME REGULAR ============
+function trocarAbaRegular(aba) {
+  document.querySelectorAll('#regime-regular .tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#regime-regular .form-section').forEach(s => s.classList.add('hidden'));
+  document.getElementById(`tab-reg-${aba}`).classList.add('active');
+  document.getElementById(`tab-${aba}`).classList.remove('hidden');
+}
+
+async function calcularRegimeRegular() {
+  const json = document.getElementById('json-regime').value.trim();
+  if (!json) {
+    alert('Informe o JSON de entrada');
+    return;
+  }
+  try { JSON.parse(json); } catch (e) {
+    document.getElementById('erro-json-regime').textContent = 'JSON inválido: ' + e.message;
+    return;
+  }
+  document.getElementById('erro-json-regime').textContent = '';
+
+  const tpDoc = document.getElementById('tp-doc-regime').value;
+  const municipio = document.getElementById('municipio-regime').value;
+  const uf = document.getElementById('uf-regime').value.toUpperCase();
+
+  const btn = document.querySelector('#regime-regular .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Processando...';
+
+  try {
+    const resp = await fetch(`${APIS.regime}/api/calculadora/observabilidade/regime-geral?municipio=${municipio}&uf=${uf}&tpDoc=${tpDoc}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: json
+    });
+    if (!resp.ok) throw new Error(`Erro ${resp.status}: ${await resp.text()}`);
+    const data = await resp.json();
+    document.getElementById('resultado-regime').classList.remove('hidden');
+    document.getElementById('json-saida-regime').textContent = JSON.stringify(data, null, 2);
+    const grid = document.getElementById('grid-regime');
+    grid.innerHTML = '';
+    const vals = extrairNumericos(data);
+    if (vals.length === 0) {
+      grid.innerHTML = '<div style="color:var(--muted);">Nenhum valor numérico encontrado.</div>';
+    } else {
+      vals.forEach(v => {
+        const div = document.createElement('div');
+        div.className = 'metric';
+        div.innerHTML = `<div class="value">${v.valor}</div><div class="label">${v.label}</div>`;
+        grid.appendChild(div);
+      });
+    }
+  } catch (err) {
+    alert(`Erro ao calcular Regime Regular: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Calcular Regime Regular';
+  }
+}
+
+async function calcularBaseCalculo() {
+  const json = document.getElementById('json-bc-regime').value.trim();
+  if (!json) {
+    alert('Informe o JSON da base de cálculo');
+    return;
+  }
+  try { JSON.parse(json); } catch (e) {
+    alert('JSON inválido: ' + e.message);
+    return;
+  }
+  try {
+    const resp = await fetch(`${APIS.regime}/api/calculadora/base-calculo/base-calculo-unificada`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: json
+    });
+    if (!resp.ok) throw new Error(`Erro ${resp.status}: ${await resp.text()}`);
+    const data = await resp.json();
+    document.getElementById('resultado-bc-regime').classList.remove('hidden');
+    document.getElementById('json-saida-bc').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    alert(`Erro ao calcular base de cálculo: ${err.message}`);
+  }
+}
+
+async function gerarXml() {
+  const xml = document.getElementById('xml-regime').value.trim();
+  const tipo = document.getElementById('tipo-xml').value;
+  if (!xml) {
+    alert('Informe o XML');
+    return;
+  }
+  try {
+    const resp = await fetch(`${APIS.regime}/api/calculadora/xml/generate?tipo=${tipo}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/xml' },
+      body: xml
+    });
+    if (!resp.ok) throw new Error(`Erro ${resp.status}: ${await resp.text()}`);
+    const data = await resp.json();
+    document.getElementById('resultado-xml-regime').classList.remove('hidden');
+    document.getElementById('json-saida-xml').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    alert(`Erro ao gerar XML: ${err.message}`);
+  }
+}
+
+async function validarXml() {
+  const xml = document.getElementById('xml-regime').value.trim();
+  const tipo = document.getElementById('tipo-xml').value;
+  const subtipo = document.getElementById('subtipo-xml').value || 'grupo';
+  if (!xml) {
+    alert('Informe o XML');
+    return;
+  }
+  try {
+    const resp = await fetch(`${APIS.regime}/api/calculadora/xml/validate?tipo=${tipo}&subtipo=${subtipo}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/xml' },
+      body: xml
+    });
+    if (!resp.ok) throw new Error(`Erro ${resp.status}: ${await resp.text()}`);
+    const data = await resp.json();
+    document.getElementById('resultado-xml-regime').classList.remove('hidden');
+    document.getElementById('json-saida-xml').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    alert(`Erro ao validar XML: ${err.message}`);
+  }
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  verificarServicos();
+  setInterval(verificarServicos, 30000);
+});
+
+// Limpar formulários
+document.getElementById('btn-limpar').addEventListener('click', () => {
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    if (el.type === 'file') el.value = '';
+    else if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+    else el.value = '';
+  });
+  document.querySelectorAll('.result-card').forEach(el => el.classList.remove('show'));
+  document.querySelectorAll('.result-card').forEach(el => el.style.display = 'none');
+});
+</script>
+</body>
+</html>
